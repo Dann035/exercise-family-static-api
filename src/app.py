@@ -17,15 +17,14 @@ CORS(app)
 # create the jackson family object
 jackson_family = FamilyStructure("Jackson")
 jackson_family.add_member(
-    {"name": "John Jackson", "age": 33, "Lucky Number": [7, 13, 22]}
+    {"first_name": "John", "age": 33, "lucky_numbers": [7, 13, 22]}
 )
 jackson_family.add_member(
-    {"name": "Jane Jackson", "age": 35, "Lucky Number": [10, 14, 3]}
+    {"first_name": "Jane", "age": 35, "lucky_numbers": [10, 14, 3]}
 )
 jackson_family.add_member(
-    {"name": "Jimmy Jackson", "age": 5, "Lucky Number": [1]}
+    {"first_name": "Jimmy", "age": 5, "lucky_numbers": [1]}
 )
-
 
 
 # Handle/serialize errors like a JSON object
@@ -39,36 +38,35 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-
 @app.route("/members", methods=["GET"])
 def handle_hello():
-
-    # this is how you can use the Family datastructure by calling its methods
     members = jackson_family.get_all_members()
-    response_body = {"family": members}
-
-    return jsonify(response_body), 200
+    return jsonify({"family": members}), 200
 
 @app.route("/members/<int:member_id>", methods=["GET"])
 def handle_member(member_id):
     member = jackson_family.get_member(member_id)
-    if member is None:
-        return {"Done": False}, 404
-    return {"Done": True}, 200
+    if member:
+        return jsonify(member), 200
+    return {"error": "Member not found"}, 404
 
 @app.route("/members", methods=["POST"])
 def handle_add_member():
-    body = jackson_family.add_member(request.json)
-    if body is None:
-        return {"Done": False}, 404
-    return {"Done": True}, 201
+    data = request.get_json()
+    if not data:
+        return {"error": "Invalid JSON"}, 400
+
+    member = jackson_family.add_member(data)
+    if member is None:
+        return {"Done": False}, 400
+    return jsonify(member), 201
 
 @app.route("/members/<int:member_id>", methods=["DELETE"])
 def delete_member(member_id):
-    member = jackson_family.delete_member(member_id)
-    if member is None:
-        return {"Done": False}, 404
-    return {"Done": True}, 204
+    result = jackson_family.delete_member(member_id)
+    if result:
+        return {"Done": True}, 200
+    return {"error": "Member not found"}, 404
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == "__main__":
